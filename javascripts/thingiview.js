@@ -12,8 +12,8 @@ Thingiview = function(containerId) {
   var plane    = null;
   
   var ambientLight     = null;
-  var directionalLight = null;
-  var pointLight       = null;
+  var frontLight       = null;
+  var backLight        = null;
   
   var targetXRotation             = 0;
   var targetXRotationOnMouseDown  = 0;
@@ -60,6 +60,7 @@ Thingiview = function(containerId) {
   }
 
   var geometry;
+  var testCanvas;
 
   this.initScene = function() {
     container.style.position = 'relative';
@@ -70,21 +71,22 @@ Thingiview = function(containerId) {
 
   	scene  = new THREE.Scene();
 
-    ambientLight = new THREE.AmbientLight(0x202020);
+    ambientLight = new THREE.AmbientLight(0xffffff);
     scene.addLight(ambientLight);
     
-    directionalLight = new THREE.DirectionalLight(0xffffff, 0.75);
-    directionalLight.position.x = 1;
-    directionalLight.position.y = 1;
-    directionalLight.position.z = 2;
-    directionalLight.position.normalize();
-    scene.addLight(directionalLight);
+    frontLight = new THREE.DirectionalLight(0x808080, 0.35);
+    frontLight.position.x = 1;
+    frontLight.position.y = 1;
+    frontLight.position.z = 2;
+    frontLight.position.normalize();
+    scene.addLight(frontLight);
     
-    pointLight = new THREE.PointLight(0xffffff, 0.3);
-    pointLight.position.x = 0;
-    pointLight.position.y = -25;
-    pointLight.position.z = 10;
-    scene.addLight(pointLight);
+    backLight = new THREE.DirectionalLight(0x808080, 0.35);
+    backLight.position.x = -1;
+    backLight.position.y = -1;
+    backLight.position.z = 2;
+    backLight.position.normalize();
+    scene.addLight(backLight);
 
     progressBar = document.createElement('div');
     progressBar.style.position = 'absolute';
@@ -112,9 +114,6 @@ Thingiview = function(containerId) {
     alertBox.style.zIndex = 100;
     container.appendChild(alertBox);
     
-    // load a blank object
-    // this.loadSTLString('');
-
     if (showPlane) {
       loadPlaneGeometry();
     }
@@ -128,6 +127,7 @@ Thingiview = function(containerId) {
         // showPlane = false;
         isWebGl = true;
         renderer = new THREE.WebGLRenderer();
+        renderer.gammaOutput = true;
         // renderer = new THREE.CanvasRenderer();
       } else {
         renderer = new THREE.CanvasRenderer();
@@ -148,10 +148,6 @@ Thingiview = function(containerId) {
     // stats.domElement.style.top       = '0px';
     // container.appendChild(stats.domElement);
 
-    // TODO: figure out how to get the render window to resize when window resizes
-    // window.addEventListener('resize', onContainerResize(), false);
-    // container.addEventListener('resize', onContainerResize(), false);
-
     // renderer.domElement.addEventListener('mousemove',      onRendererMouseMove,     false);    
   	window.addEventListener('mousemove',      onRendererMouseMove,     false);    
     renderer.domElement.addEventListener('mouseover',      onRendererMouseOver,     false);
@@ -169,20 +165,6 @@ Thingiview = function(containerId) {
   	renderer.domElement.addEventListener('gesturechange',  onRendererGestureChange, false);
   }
 
-  // FIXME
-  // onContainerResize = function(event) {
-  //   width  = parseFloat(document.defaultView.getComputedStyle(container,null).getPropertyValue('width'));
-  //   height = parseFloat(document.defaultView.getComputedStyle(container,null).getPropertyValue('height'));
-  // 
-  //   // log("resized width: " + width + ", height: " + height);
-  // 
-  //   if (renderer) {
-  //     renderer.setSize(width, height);
-  //     camera.projectionMatrix = THREE.Matrix4.makePerspective(70, width / height, 1, 10000);
-  //     sceneLoop();
-  //   }    
-  // };
-  
   onRendererScroll = function(event) {
     event.preventDefault();
 
@@ -437,29 +419,45 @@ Thingiview = function(containerId) {
     if (dir == 'top') {
       // camera.position.y = 0;
       // camera.position.z = 100;
-      // camera.target.position.z = 0;
       if (showPlane) {
         plane.flipSided = false;
       }
     } else if (dir == 'side') {
-      // camera.position.y = -70;
-      // camera.position.z = 70;
-      // camera.target.position.z = 0;
-      targetYRotation = -4.5;
+      camera.position.y = -70;
+      camera.position.z = 70;
+      targetYRotation = -4.0;
+      targetXRotation = -9.5;
+      camera.target.position.z = 0;
+      if (showPlane) {
+        plane.flipSided = false;
+      }
+    } else if (dir == 'front') {
+      camera.position.y = -70;
+      camera.position.z = 70;
+      targetYRotation = -4.0;
+      camera.target.position.z = 0;
+      if (showPlane) {
+        plane.flipSided = false;
+      }
+    } else if (dir == 'front') {
+      camera.position.y = -70;
+      camera.position.z = 70;
+      targetYRotation = -4.0;
+      camera.target.position.z = 0;
       if (showPlane) {
         plane.flipSided = false;
       }
     } else if (dir == 'bottom') {
       // camera.position.y = 0;
       // camera.position.z = -100;
-      // camera.target.position.z = 0;
       if (showPlane) {
         plane.flipSided = true;
       }
     } else {
-      // camera.position.y = -70;
-      // camera.position.z = 70;
-      // camera.target.position.z = 0;
+      camera.position.y = -70;
+      camera.position.z = 70;
+      targetXRotation = -9.5;
+      camera.target.position.z = 0;
       if (showPlane) {
         plane.flipSided = false;
       }
@@ -552,18 +550,6 @@ Thingiview = function(containerId) {
     scope.newWorker('loadJSON', url);
   }
 
-  this.loadPLY = function(url) {
-    scope.newWorker('loadPLY', url);
-  }
-  
-  this.loadPLYString = function(PLYString) {
-    scope.newWorker('loadPLYString', PLYString);
-  }
-
-  this.loadPLYBinary = function(PLYBinary) {
-    scope.newWorker('loadPLYBinary', PLYBinary);
-  }
-
   this.centerCamera = function() {
     if (geometry) {
       // Using method from http://msdn.microsoft.com/en-us/library/bb197900(v=xnagamestudio.10).aspx
@@ -584,16 +570,16 @@ Thingiview = function(containerId) {
 
       // zoom backwards about half that distance, I don't think I'm doing the math or backwards vector calculation correctly?
       // scope.setCameraZoom(-distance/1.8);
-      // scope.setCameraZoom(-distance/1.5);
-      scope.setCameraZoom(-distance/1.9);
+      scope.setCameraZoom(-distance/1.5);
+      //scope.setCameraZoom(-distance/1.9);
 
-      directionalLight.position.x = geometry.min_y * 2;
-      directionalLight.position.y = geometry.min_y * 2;
-      directionalLight.position.z = geometry.max_z * 2;
+      frontLight.position.x = geometry.min_x * 3;
+      frontLight.position.y = geometry.min_y * 3;
+      frontLight.position.z = geometry.max_z * 2;
 
-      pointLight.position.x = geometry.center_y;
-      pointLight.position.y = geometry.center_y;
-      pointLight.position.z = geometry.max_z * 2;
+      backLight.position.x = 0;
+      backLight.position.y = 0;
+      backLight.position.z = geometry.max_z * 4;
     } else {
       // set to any valid position so it doesn't fail before geometry is available
       camera.position.y = -70;
@@ -607,13 +593,11 @@ Thingiview = function(containerId) {
     geometry = new STLGeometry(array);
     loadObjectGeometry();
     scope.setRotation(false);
-    scope.setRotation(true);
     scope.centerCamera();
     log("finished loading " + geometry.faces.length + " faces.");
   }
 
   this.newWorker = function(cmd, param) {
-    scope.setRotation(false);
   	
     var worker = new WorkerFacade(thingiurlbase + '/thingiloader.js');
     
@@ -626,41 +610,9 @@ Thingiview = function(containerId) {
         progressBar.innerHTML = '';
         progressBar.style.display = 'none';
 
-        scope.setRotation(false);
-        scope.setRotation(true);
         log("finished loading " + geometry.faces.length + " faces.");
         scope.centerCamera();
-      } else if (event.data.status == "complete_points") {
-        progressBar.innerHTML = 'Initializing points...';
-
-        geometry = new THREE.Geometry();
-
-        var material = new THREE.ParticleBasicMaterial( { color: 0xff0000, opacity: 1 } );
-
-        // material = new THREE.ParticleBasicMaterial( { size: 35, sizeAttenuation: false} );
-        // material.color.setHSV( 1.0, 0.2, 0.8 );
-        
-        for (i in event.data.content[0]) {
-        // for (var i=0; i<10; i++) {
-          vector = new THREE.Vector3( event.data.content[0][i][0], event.data.content[0][i][1], event.data.content[0][i][2] );
-          geometry.vertices.push( new THREE.Vertex( vector ) );
-        }
-
-        particles = new THREE.ParticleSystem( geometry, material );
-        particles.sortParticles = true;
-        particles.updateMatrix();
-        scene.addObject( particles );
-                                
-        camera.updateMatrix();
-        renderer.render(scene, camera);
-        
-        progressBar.innerHTML = '';
-        progressBar.style.display = 'none';
-
-        scope.setRotation(false);
-        scope.setRotation(true);
-        log("finished loading " + event.data.content[0].length + " points.");
-        // scope.centerCamera();
+        sceneLoop();
       } else if (event.data.status == "progress") {
         progressBar.style.display = 'block';
         progressBar.style.width = event.data.content;
@@ -668,7 +620,7 @@ Thingiview = function(containerId) {
       } else if (event.data.status == "message") {
         progressBar.style.display = 'block';
         progressBar.innerHTML = event.data.content;
-        log(event.data.content);
+        // log(event.data.content);
       } else if (event.data.status == "alert") {
         scope.displayAlert(event.data.content);
       } else {
@@ -696,7 +648,7 @@ Thingiview = function(containerId) {
 
   function loadPlaneGeometry() {
     // TODO: switch to lines instead of the Plane object so we can get rid of the horizontal lines in canvas renderer...
-    plane = new THREE.Mesh(new Plane(100, 100, 10, 10), new THREE.MeshBasicMaterial({color:0xafafaf,wireframe:true}));
+    plane = new THREE.Mesh(new Plane(100, 100, 16, 16), new THREE.LineBasicMaterial({color:0xe0e0e0,linewidth:2.5}));
     scene.addObject(plane);
   }
 
@@ -707,12 +659,11 @@ Thingiview = function(containerId) {
         material = new THREE.MeshBasicMaterial({color:objectColor,wireframe:true});
       } else {
         if (isWebGl) {
-          // material = new THREE.MeshPhongMaterial(objectColor, objectColor, 0xffffff, 50, 1.0);
+          material = new THREE.MeshPhongMaterial({color:objectColor});
           // material = new THREE.MeshColorFillMaterial(objectColor);
           // material = new THREE.MeshLambertMaterial({color:objectColor});
-          material = new THREE.MeshLambertMaterial({color:objectColor, shading: THREE.FlatShading});
+          //material = new THREE.MeshLambertMaterial({color:objectColor, shading: THREE.FlatShading});
         } else {
-          // material = new THREE.MeshColorFillMaterial(objectColor);
           material = new THREE.MeshLambertMaterial({color:objectColor, shading: THREE.FlatShading});
         }
       }
