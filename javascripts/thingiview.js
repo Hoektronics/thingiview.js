@@ -612,6 +612,11 @@ Thingiview = function(containerId) {
     log("finished loading " + geometry.faces.length + " faces.");
   }
 
+  this.progressBarMessage = function(msg){
+    progressBar.style.display = 'block';
+    progressBar.innerHTML = msg;
+  }
+
   this.newWorker = function(cmd, param) {
     scope.setRotation(false);
   	
@@ -627,7 +632,7 @@ Thingiview = function(containerId) {
         progressBar.style.display = 'none';
 
         scope.setRotation(false);
-        scope.setRotation(true);
+        //scope.setRotation(true);
         log("finished loading " + geometry.faces.length + " faces.");
         scope.centerCamera();
       } else if (event.data.status == "complete_points") {
