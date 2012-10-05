@@ -7,35 +7,47 @@ include('convert.php');
 
 $file = $_GET['file'];
 
+// NC: I found that my STL files weren't being recognized as binary, so I'm adding a flag
+$binary = ($_GET['binary'] == '') ? false : true;
+
 $file_parts = pathinfo($file);
-
 $handle = fopen($file, 'rb');
-
-if ($handle == FALSE) {
+if ($handle == FALSE)
+{
   trigger_error("Failed to open file $file");
+  exit;
 }
 
-$contents = "";
-
-while (!feof($handle)) {
-  $contents .= fgets($handle);
-}
-
-$contents = preg_replace('/$\s+.*/', '', $contents);
-
-switch($file_parts['extension']){
+switch($file_parts['extension'])
+{
   case 'stl':
-    if (stripos($contents, 'solid') === FALSE) {
+    if ($binary)
+    {
       $result = parse_stl_binary($handle);
-    } else {
-      $result = parse_stl_string($contents);
+    }
+	else
+    {
+	  $contents = getStringContents($handle);
+      if ( stripos($contents, 'solid') === FALSE )
+	    $result = parse_stl_binary($handle);
+	  else
+	    $result = parse_stl_string($contents);
     }  
     break;
   case 'obj':
-    $result = parse_obj_string($contents);
+    $result = parse_obj_string(getStringContents($file));
     break;
 }
 
 echo json_encode($result);
 
-?>
+// NC: moved the string parser to a function
+function getStringContents($handle)
+{
+  $contents = "";
+
+  while (!feof($handle))
+    $contents .= fgets($handle);
+
+  return preg_replace('/$\s+.*/', '', $contents);
+}

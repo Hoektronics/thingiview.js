@@ -41,51 +41,60 @@ function parse_stl_string($str) {
   return array($vertexes, $faces);
 }
 
-function parse_stl_binary($fp) {
+function parse_stl_binary($fp)
+{
   $vertexes = array();
   $faces    = array();
+  $key_find = array();
+  $count_vertexes = 0;
+  //$scale = 1; // todo: add support for scaling the model
+  //$shift = array(0, 0, 0); // todo: add support for shifting the model
 
-  $face_vertexes = array();
-
-  // $fp = fopen($filename, "rb");
   rewind($fp);
 
   // skip header
-  $data = fread($fp, 80);
-  $header = unpack("c*", $data);
+  fseek($fp, 80, SEEK_CUR);
 
   // get number of faces
   $data = fread($fp, 4);
-  $count = unpack("i", $data);
+  $count = unpack('i', $data);
+  $num_face = $count[1];
+    unset($count); unset($data);  // trying to be memory efficient for large files
 
-  for ($i = 0; $i < $count[1]; $i++) {
+  for ($i = 0; $i < $num_face; ++$i)
+  {
     // skip normals
-    $data = fread($fp, 12);
-    $normal = unpack("fff", $data);
+    fseek($fp, 12, SEEK_CUR);
 
-    for ($v_count = 0; $v_count < 3; $v_count++) {
+    for ($v_count = 0; $v_count < 3; ++$v_count)
+    {
       $points = array();
       
-      for ($v_index = 0; $v_index < 3; $v_index ++) {
+      for ($v_index = 0; $v_index < 3; ++$v_index)
+      {
         $data = fread($fp, 4);
-        $points[] = unpack("f", $data);        
+        $points[] = unpack('f', $data);        
       }
 
-      $vertex = array($points[0][1], $points[1][1], $points[2][1]);
-
-      if (!in_array($vertex, $vertexes)) {
-        $vertexes[] = $vertex;
-      }
       
-      $face_vertexes[$i][] = $vertex;
+      //$vertex = array($points[0][1]/$scale+$shift[0], $points[1][1]/$scale+$shift[1], $points[2][1]/$scale+$shift[2]);
+	  $vertex = array($points[0][1], $points[1][1], $points[2][1]);
+	    unset($points);
 
+      // use a hashmap to store the vertices
+      $vertex_md5 = md5(implode('', $vertex));
+      if ( !$key_find[$vertex_md5] )
+      {
+        $vertexes[$count_vertexes] = $vertex;
+        $key_find[$vertex_md5] = $count_vertexes++;
+      }
+
+      $faces[$i][] = $key_find[$vertex_md5]; // quicker then using make_faces; array_search is slow
+        unset($vertex_md5); unset($vertex);
     }
 
-    $data = fread($fp, 2);
-    $attribute = unpack("S", $data);
+    fseek($fp, 2, SEEK_CUR);
   }
-  
-  $faces = make_faces($vertexes, $face_vertexes);
   
   return array($vertexes, $faces);
 }
@@ -127,5 +136,3 @@ function make_faces($vertexes, $face_vertexes) {
   
   return $faces;
 }
-
-?>
