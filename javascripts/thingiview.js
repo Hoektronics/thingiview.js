@@ -46,7 +46,7 @@ Thingiview = function(containerId) {
   var rotateListener = null;
   var wasRotating    = null;
 
-  var cameraView = 'diagonal';
+  var cameraView = 'iso';
   var cameraZoom = 0;
   var rotate = false;
   var backgroundColor = '#606060';
@@ -475,6 +475,12 @@ Thingiview = function(containerId) {
       if (showPlane) {
         plane.flipSided = true;
       }
+    } else if (dir == 'iso') {
+      targetXRotation = 45;
+      targetYRotation = 0;
+      if (showPlane) {
+        plane.flipSided = true;
+      }
     } else {
 
       // camera.position.y = -70;
@@ -594,18 +600,7 @@ Thingiview = function(containerId) {
 
       // zoom backwards about half that distance, I don't think I'm doing the math or backwards vector calculation correctly?
       // scope.setCameraZoom(-distance/1.8);
-<<<<<<< HEAD
-      scope.setCameraZoom(-distance/1.5);
-      //scope.setCameraZoom(-distance/1.9);
 
-      frontLight.position.x = geometry.min_x * 3;
-      frontLight.position.y = geometry.min_y * 3;
-      frontLight.position.z = geometry.max_z * 2;
-
-      backLight.position.x = 0;
-      backLight.position.y = 0;
-      backLight.position.z = geometry.max_z * 4;
-=======
       // scope.setCameraZoom(-distance/1.5);
       scope.setCameraZoom(-distance/0.9);
 
@@ -616,7 +611,6 @@ Thingiview = function(containerId) {
       pointLight.x = geometry.center_y;
       pointLight.y = geometry.center_y;
       pointLight.z = geometry.max_z * 2;
->>>>>>> d956e448aa3adb2dc30007482c72799aef0374f1
     } else {
       // set to any valid position so it doesn't fail before geometry is available
       camera.position.y = -70;
@@ -629,21 +623,19 @@ Thingiview = function(containerId) {
     log("loading array...");
     geometry = new STLGeometry(array);
     loadObjectGeometry();
-<<<<<<< HEAD
-    scope.setRotation(false);
-=======
     scope.setRotation(rotate);
-    //scope.setRotation(true);
->>>>>>> d956e448aa3adb2dc30007482c72799aef0374f1
     scope.centerCamera();
     log("finished loading " + geometry.faces.length + " faces.");
   }
 
+  this.progressBarMessage = function(msg){
+    progressBar.style.display = 'block';
+    progressBar.innerHTML = msg;
+  }
+
   this.newWorker = function(cmd, param) {
-<<<<<<< HEAD
-=======
+
     scope.setRotation(rotate);
->>>>>>> d956e448aa3adb2dc30007482c72799aef0374f1
   	
     var worker = new WorkerFacade(thingiurlbase + '/thingiloader.js');
     
@@ -656,14 +648,10 @@ Thingiview = function(containerId) {
         progressBar.innerHTML = '';
         progressBar.style.display = 'none';
 
-<<<<<<< HEAD
-        log("finished loading " + geometry.faces.length + " faces.");
-        scope.centerCamera();
-        sceneLoop();
-=======
         scope.setRotation(rotate);
-        //scope.setRotation(true);
+
         log("finished loading " + geometry.faces.length + " faces.");
+        thingiview.setCameraView(cameraView);
         scope.centerCamera();
       } else if (event.data.status == "complete_points") {
         progressBar.innerHTML = 'Initializing points...';
@@ -697,7 +685,6 @@ Thingiview = function(containerId) {
         //scope.setRotation(true);
         log("finished loading " + event.data.content[0].length + " points.");
         // scope.centerCamera();
->>>>>>> d956e448aa3adb2dc30007482c72799aef0374f1
       } else if (event.data.status == "progress") {
         progressBar.style.display = 'block';
         progressBar.style.width = event.data.content;
@@ -749,12 +736,9 @@ Thingiview = function(containerId) {
           // material = new THREE.MeshLambertMaterial({color:objectColor});
           //material = new THREE.MeshLambertMaterial({color:objectColor, shading: THREE.FlatShading});
         } else {
-<<<<<<< HEAD
-          material = new THREE.MeshLambertMaterial({color:objectColor, shading: THREE.FlatShading});
-=======
+          //material = new THREE.MeshLambertMaterial({color:objectColor, shading: THREE.FlatShading});
           // material = new THREE.MeshColorFillMaterial(objectColor);
           material = new THREE.MeshLambertMaterial({color:objectColor, shading: THREE.FlatShading, wireframe:false, overdraw:true});
->>>>>>> d956e448aa3adb2dc30007482c72799aef0374f1
         }
       }
 
