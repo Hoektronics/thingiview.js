@@ -10,6 +10,7 @@ Thingiview = function(containerId) {
   var renderer = null;
   var object   = null;
   var plane    = null;
+  var controls = null;
   
   var ambientLight     = null;
   var frontLight       = null;
@@ -69,9 +70,14 @@ Thingiview = function(containerId) {
   this.initScene = function() {
     container.style.position = 'relative';
     container.innerHTML      = '';
-
-    camera = new THREE.PerspectiveCamera(45, width/height, 1, 100000);
-  	camera.updateMatrix();
+    
+    var fov    = 45,
+        aspect = width / height,
+        near   = 1,
+        far    = 100000;
+        
+    camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  	//camera.updateMatrix();
 
   	scene  = new THREE.Scene();
 
@@ -91,37 +97,39 @@ Thingiview = function(containerId) {
     pointLight.position.z = 10;
     scene.add(pointLight);
 
-    progressBar = document.createElement('div');
-    progressBar.style.position = 'absolute';
-    progressBar.style.top = '0px';
-    progressBar.style.left = '0px';
-    progressBar.style.backgroundColor = 'red';
-    progressBar.style.padding = '5px';
-    progressBar.style.display = 'none';
-    progressBar.style.overflow = 'visible';
-    progressBar.style.whiteSpace = 'nowrap';
-    progressBar.style.zIndex = 100;
-    container.appendChild(progressBar);
+    progressBar = $('#GCodeStatusDiv');
     
-    alertBox = document.createElement('div');
-    alertBox.id = 'alertBox';
-    alertBox.style.position = 'absolute';
-    alertBox.style.top = '25%';
-    alertBox.style.left = '25%';
-    alertBox.style.width = '50%';
-    alertBox.style.height = '50%';
-    alertBox.style.backgroundColor = '#dddddd';
-    alertBox.style.padding = '10px';
-    // alertBox.style.overflowY = 'scroll';
-    alertBox.style.display = 'none';
-    alertBox.style.zIndex = 100;
-    container.appendChild(alertBox);
+    // document.createElement('div');
+    //     progressBar.style.position = 'absolute';
+    //     progressBar.style.top = '0px';
+    //     progressBar.style.left = '0px';
+    //     progressBar.style.backgroundColor = 'red';
+    //     progressBar.style.padding = '5px';
+    //     progressBar.style.display = 'none';
+    //     progressBar.style.overflow = 'visible';
+    //     progressBar.style.whiteSpace = 'nowrap';
+    //     progressBar.style.zIndex = 100;
+    //     container.appendChild(progressBar);
+         
+    alertBox = $('#GCodeErrorDiv');
+    // alertBox.id = 'alertBox';
+    //     alertBox.style.position = 'absolute';
+    //     alertBox.style.top = '25%';
+    //     alertBox.style.left = '25%';
+    //     alertBox.style.width = '50%';
+    //     alertBox.style.height = '50%';
+    //     alertBox.style.backgroundColor = '#dddddd';
+    //     alertBox.style.padding = '10px';
+    //     // alertBox.style.overflowY = 'scroll';
+    //     alertBox.style.display = 'none';
+    //     alertBox.style.zIndex = 100;
+    //     container.appendChild(alertBox);
     
     if (showPlane) {
       loadPlaneGeometry();
     }
     
-    this.setCameraView(cameraView);
+    //this.setCameraView(cameraView);
     this.setObjectMaterial(objectMaterial);
 
     testCanvas = document.createElement('canvas');
@@ -129,7 +137,7 @@ Thingiview = function(containerId) {
       if (testCanvas.getContext('experimental-webgl')) {
         // showPlane = false;
         isWebGl = true;
-        renderer = new THREE.WebGLRenderer();
+        renderer = new THREE.WebGLRenderer({antialias: true});
         renderer.gammaOutput = true;
         // renderer = new THREE.CanvasRenderer();
       } else {
@@ -151,6 +159,16 @@ Thingiview = function(containerId) {
     // stats.domElement.style.top       = '0px';
     // container.appendChild(stats.domElement);
 
+    //these are our controls.
+    controls = new THREE.ModelControls(camera, renderer.domElement);
+    controls.zoomSpeed = 0.05;
+    controls.dynamicDampingFactor = 0.40;
+
+    //start our renderer.
+    sceneLoop();
+
+    /*
+    //Replaced with ModelControl class
     // renderer.domElement.addEventListener('mousemove',      onRendererMouseMove,     false);    
   	window.addEventListener('mousemove',      onRendererMouseMove,     false);    
     renderer.domElement.addEventListener('mouseover',      onRendererMouseOver,     false);
@@ -166,8 +184,11 @@ Thingiview = function(containerId) {
     renderer.domElement.addEventListener('DOMMouseScroll', onRendererScroll,        false);
   	renderer.domElement.addEventListener('mousewheel',     onRendererScroll,        false);
   	renderer.domElement.addEventListener('gesturechange',  onRendererGestureChange, false);
+  	*/
   }
 
+  /*
+    //replaced with ModelControl class...
   onRendererScroll = function(event) {
     event.preventDefault();
 
@@ -321,8 +342,9 @@ Thingiview = function(containerId) {
   		targetYRotation = targetYRotationOnMouseDown + (mouseY - mouseYOnMouseDown) * 0.05;
   	}
   }
-
-  sceneLoop = function() {
+  */
+  
+  function sceneLoop() {
     if (object) {
       // if (view == 'bottom') {
       //   if (showPlane) {
@@ -338,6 +360,7 @@ Thingiview = function(containerId) {
       //   }
       // }
 
+      /*
       if (showPlane) {
         plane.rotation.z = object.rotation.z = (targetXRotation - object.rotation.z) * 0.2;
         plane.rotation.x = object.rotation.x = (targetYRotation - object.rotation.x) * 0.2;
@@ -345,25 +368,30 @@ Thingiview = function(containerId) {
         object.rotation.z = (targetXRotation - object.rotation.z) * 0.2;
         object.rotation.x = (targetYRotation - object.rotation.x) * 0.2;
       }
+      */
 
       // log(object.rotation.x);
 
-      camera.updateMatrix();
+      //camera.updateMatrix();
       object.updateMatrix();
       
       if (showPlane) {
         plane.updateMatrix();
       }
 
+      controls.update();
     	renderer.render(scene, camera);
       // stats.update();
+
     }
+
+    requestAnimationFrame(sceneLoop); // And repeat...
   }
 
-  rotateLoop = function() {
+  this.rotateLoop = function() {
     // targetRotation += 0.01;
     targetXRotation += 0.05;
-    sceneLoop();
+    //sceneLoop();
   }
 
   this.getShowPlane = function(){
@@ -387,7 +415,7 @@ Thingiview = function(containerId) {
       }
     }
     
-    sceneLoop();
+    //sceneLoop();
   }
 
   this.getRotation = function() {
@@ -421,6 +449,7 @@ Thingiview = function(containerId) {
   }
 
   this.setCameraView = function(dir) {
+    /*
     cameraView = dir;
 
     targetXRotation       = 0;
@@ -498,12 +527,13 @@ Thingiview = function(containerId) {
     mouseY            = targetYRotation;
     mouseYOnMouseDown = targetYRotation;
     
-    scope.centerCamera();
-    
-    sceneLoop();
+    scope.centerModel();
+    //sceneLoop();
+    */
   }
 
   this.setCameraZoom = function(factor) {
+    /*
     cameraZoom = factor;
     
     if (cameraView == 'bottom') {
@@ -527,8 +557,9 @@ Thingiview = function(containerId) {
 //      camera.position.y += factor;
       camera.position.z -= factor;
     }
-
-    sceneLoop();
+    
+    //sceneLoop();
+    */
   }
 
   this.getObjectMaterial = function() {
@@ -617,17 +648,15 @@ Thingiview = function(containerId) {
     if (geometry) { 
       scope.updateMetadata();
       
-      // Using method from http://msdn.microsoft.com/en-us/library/bb197900(v=xnagamestudio.10).aspx
-      // log("bounding sphere radius = " + geometry.boundingSphere.radius);
-
-      // set camera position inside our object
-      camera.position.x = geometry.center.x;
-      camera.position.y = geometry.center.y;
-      camera.position.z = geometry.center.z;
-
-      // find distance to center
+      // set camera position outside and above our object.
       distance = geometry.boundingSphere.radius / Math.sin((camera.fov/2) * (Math.PI / 180));
-      scope.setCameraZoom(-distance/0.9);
+      camera.position.x = 0;
+      camera.position.y = -distance;
+      camera.position.z = distance;
+
+      //todo: how to control where it looks at!
+      //camera.lookAt(new THREE.Vector3(0, 0, geometry.center.z));
+      //camera.updateProjectionMatrix()
 
       //our directional light is out in space
       directionalLight.x = geometry.boundingBox.min.x * 2;
@@ -657,8 +686,9 @@ Thingiview = function(containerId) {
   }
 
   this.progressBarMessage = function(msg){
-    progressBar.style.display = 'block';
-    progressBar.innerHTML = msg;
+    //progressBar.style.display = 'block';
+    progressBar.html(msg);
+    progressBar.show();
   }
 
   this.newWorker = function(cmd, param) {
@@ -669,20 +699,22 @@ Thingiview = function(containerId) {
     
     worker.onmessage = function(event) {
       if (event.data.status == "complete") {
-        progressBar.innerHTML = 'Initializing geometry...';
+        progressBar.html('Initializing geometry...');
+        progressBar.show();
         // scene.removeObject(object);
         geometry = new STLGeometry(event.data.content);
         loadObjectGeometry();
-        progressBar.innerHTML = '';
-        progressBar.style.display = 'none';
+        //progressBar.html();
+        progressBar.hide();
 
         scope.setRotation(rotate);
 
         log("finished loading " + geometry.faces.length + " faces.");
-        thingiview.setCameraView(cameraView);
+        //thingiview.setCameraView(cameraView);
         scope.centerCamera();
       } else if (event.data.status == "complete_points") {
-        progressBar.innerHTML = 'Initializing points...';
+        progressBar.html('Initializing points...');
+        progressBar.show();
 
         geometry = new THREE.Geometry();
 
@@ -695,7 +727,7 @@ Thingiview = function(containerId) {
         for (i in event.data.content[0]) {
         // for (var i=0; i<10; i++) {
           vector = new THREE.Vector3( event.data.content[0][i][0], event.data.content[0][i][1], event.data.content[0][i][2] );
-          geometry.vertices.push( new THREE.Vertex( vector ) );
+          geometry.vertices.push( vector );
         }
 
         particles = new THREE.ParticleSystem( geometry, material );
@@ -704,23 +736,26 @@ Thingiview = function(containerId) {
 
         scene.add( particles );
                                 
-        camera.updateMatrix();
+        controls.update();
         renderer.render(scene, camera);
         
-        progressBar.innerHTML = '';
-        progressBar.style.display = 'none';
-
+        //progressBar.html();
+        progressBar.hide();
+        
         scope.setRotation(false);
         //scope.setRotation(true);
         log("finished loading " + event.data.content[0].length + " points.");
         // scope.centerCamera();
       } else if (event.data.status == "progress") {
-        progressBar.style.display = 'block';
-        progressBar.style.width = event.data.content;
+        //progressBar.style.display = 'block';
+        //progressBar.style.width = event.data.content;
         // log(event.data.content);
+        progressBar.html("Progress: " + event.data.content)
+        progressBar.show();
       } else if (event.data.status == "message") {
-        progressBar.style.display = 'block';
-        progressBar.innerHTML = event.data.content;
+        //progressBar.style.display = 'block';
+        progressBar.html(event.data.content);
+        progressBar.show();
         // log(event.data.content);
       } else if (event.data.status == "alert") {
         scope.displayAlert(event.data.content);
@@ -739,17 +774,16 @@ Thingiview = function(containerId) {
   }
 
   this.displayAlert = function(msg) {
-    msg = msg + "<br/><br/><center><input type=\"button\" value=\"Ok\" onclick=\"document.getElementById('alertBox').style.display='none'\"></center>"
+    msg = msg + "<br/><br/><center><input type=\"button\" value=\"Ok\" onclick=\"$('#alertBox').hide()\"></center>"
     
-    alertBox.innerHTML = msg;
-    alertBox.style.display = 'block';
+    alertBox.html(msg);
+    alertBox.show();
     
     // log(msg);
   }
 
   function loadPlaneGeometry() {
-    // TODO: switch to lines instead of the Plane object so we can get rid of the horizontal lines in canvas renderer...
-    plane = new Plane(200, 200, 10, new THREE.LineBasicMaterial({color:0x111111,linewidth:1}));
+    plane = new Grid(200, 200, 10, new THREE.LineBasicMaterial({color:0x111111,linewidth:1}));
     scene.add(plane);
   }
 
@@ -798,7 +832,7 @@ Thingiview = function(containerId) {
       targetXRotation = 0;
       targetYRotation = 0;
 
-      sceneLoop();
+      //sceneLoop();
     }
   }
 
@@ -824,7 +858,7 @@ var STLGeometry = function(stlArray) {
 
   function v(x, y, z) {
     // log("adding vertex: " + x + "," + y + "," + z);
-    scope.vertices.push( new THREE.Vertex( new THREE.Vector3( x, y, z ) ) );
+    scope.vertices.push( new THREE.Vector3( x, y, z )  );
   }
 
   function f3(a, b, c) {
